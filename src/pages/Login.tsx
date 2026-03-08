@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, MapPin, BarChart2, Briefcase, Target, TrendingUp, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, MapPin, BarChart2, Briefcase, Target, TrendingUp, Loader2, Mail, Users } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
 export default function Login() {
@@ -492,78 +492,96 @@ export default function Login() {
                   )}
                 </div>
               </form>
-
-              {/* Demo Accounts */}
-              <div className="mt-8 bg-slate-50 p-6 rounded-xl border border-slate-100">
-                <h4 className="text-[#003366] font-semibold mb-4 text-center">Demo Accounts</h4>
-                <div className="flex flex-col gap-3">
-                  <div className="bg-white p-3 rounded-lg text-sm font-mono border border-slate-200 shadow-sm">
-                    <strong className="font-sans text-slate-700">Super Admin:</strong><br/>
-                    <span className="text-slate-600">nileshnaphade15@gmail.com</span><br/>
-                    <span className="text-slate-500">Admin123#</span>
-                  </div>
-                  <div className="bg-white p-3 rounded-lg text-sm font-mono border border-slate-200 shadow-sm">
-                    <strong className="font-sans text-slate-700">Admin:</strong><br/>
-                    <span className="text-slate-600">admin@montgomery-twin.local</span><br/>
-                    <span className="text-slate-500">Admin123!</span>
-                  </div>
-                  <div className="bg-white p-3 rounded-lg text-sm font-mono border border-slate-200 shadow-sm">
-                    <strong className="font-sans text-slate-700">Business:</strong><br/>
-                    <span className="text-slate-600">business@montgomery-twin.local</span><br/>
-                    <span className="text-slate-500">Business123!</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </motion.div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="relative z-50 bg-black/30 backdrop-blur-md border-t border-white/10 py-12 mt-auto">
+      {/* Features Section */}
+      <section id="features" className="relative z-10 bg-slate-50 py-20 border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-            <div>
-              <h3 className="text-white font-semibold text-lg mb-4">Montgomery Urban Digital Twin</h3>
-              <p className="text-white/80 leading-relaxed mb-2">Empowering businesses with data-driven insights for workforce and economic growth in Montgomery, Alabama.</p>
-              <p className="text-white/80">© 2024 City of Montgomery. All rights reserved.</p>
-            </div>
-            
-            <div>
-              <h3 className="text-white font-semibold text-lg mb-4">Quick Links</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-white/80 hover:text-[#FFD700] transition-colors">Home</a></li>
-                <li><a href="#features" className="text-white/80 hover:text-[#FFD700] transition-colors">Features</a></li>
-                <li><a href="#about" className="text-white/80 hover:text-[#FFD700] transition-colors">About</a></li>
-                <li><a href="#contact" className="text-white/80 hover:text-[#FFD700] transition-colors">Contact</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-white font-semibold text-lg mb-4">Resources</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-white/80 hover:text-[#FFD700] transition-colors">Documentation</a></li>
-                <li><a href="#" className="text-white/80 hover:text-[#FFD700] transition-colors">API Reference</a></li>
-                <li><a href="#" className="text-white/80 hover:text-[#FFD700] transition-colors">Support</a></li>
-                <li><a href="#" className="text-white/80 hover:text-[#FFD700] transition-colors">FAQ</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-white font-semibold text-lg mb-4">Connect</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-white/80 hover:text-[#FFD700] transition-colors">LinkedIn</a></li>
-                <li><a href="#" className="text-white/80 hover:text-[#FFD700] transition-colors">Twitter</a></li>
-                <li><a href="#" className="text-white/80 hover:text-[#FFD700] transition-colors">GitHub</a></li>
-                <li><a href="#" className="text-white/80 hover:text-[#FFD700] transition-colors">Newsletter</a></li>
-              </ul>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#003366] mb-4">Platform Features</h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Everything you need to make data-driven decisions for your business and community.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              { icon: MapPin, title: 'Advanced location scoring and analysis', desc: 'Evaluate potential sites based on foot traffic, demographics, and zoning data.' },
+              { icon: BarChart2, title: 'Real-time market and competition insights', desc: 'Monitor competitor density and market saturation in specific neighborhoods.' },
+              { icon: Briefcase, title: 'Comprehensive labor market analysis', desc: 'Understand the local workforce, commute patterns, and talent availability.' },
+              { icon: Target, title: 'AI-powered business recommendations', desc: 'Let our Gemini AI engine suggest the most viable business types for vacant properties.' },
+              { icon: TrendingUp, title: 'Economic growth forecasting tools', desc: 'Simulate the economic impact of new developments and public events.' }
+            ].map((feature, idx) => (
+              <div key={idx} className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-14 h-14 bg-[#0055A4]/10 rounded-xl flex items-center justify-center mb-6 text-[#0055A4]">
+                  <feature.icon size={28} strokeWidth={2} />
+                </div>
+                <h3 className="text-xl font-bold text-[#003366] mb-3">{feature.title}</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  {feature.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section id="about" className="relative z-10 bg-white py-20">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#003366] mb-4">About the Team</h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Meet the global team of experts behind the Montgomery Urban Digital Twin platform.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              { name: 'Monia Mahmoudi', location: 'Sidi Bouzid, Tunisia' },
+              { name: 'Moazzam Waheed', location: 'Pakistan' },
+              { name: 'Nilesh Naphade', location: 'Pune, India' },
+              { name: 'Bill Smith', location: 'Kenya' },
+              { name: 'Ebeeyjane', location: 'UK' }
+            ].map((member, idx) => (
+              <div key={idx} className="bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow text-center">
+                <div className="w-16 h-16 bg-[#0055A4]/10 rounded-full flex items-center justify-center mx-auto mb-4 text-[#0055A4]">
+                  <Users size={24} />
+                </div>
+                <h3 className="text-xl font-bold text-[#003366] mb-1">{member.name}</h3>
+                <p className="text-slate-500 flex items-center justify-center gap-1">
+                  <MapPin size={14} /> {member.location}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="relative z-10 bg-white py-20 border-t border-slate-200">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#003366] mb-6">Get in Touch</h2>
+            <p className="text-lg text-slate-600 mb-8">
+              Have questions about the platform or need support? We're here to help.
+            </p>
+            <div className="inline-flex items-center gap-3 bg-white px-8 py-4 rounded-full shadow-sm border border-slate-200 text-lg">
+              <Mail className="text-[#0055A4]" />
+              <span className="font-medium text-slate-700">Contact us at:</span>
+              <a href="mailto:henimahmoudi.monia@gmail.com" className="text-[#0055A4] font-bold hover:underline">
+                henimahmoudi.monia@gmail.com
+              </a>
             </div>
           </div>
-          
-          <div className="border-t border-white/10 pt-8 text-center text-white/60 text-sm">
-            <p className="mb-2">© 2026 City of Montgomery, Alabama | Urban Digital Twin Platform</p>
-            <p>Powered by Montgomery Open Data Initiative</p>
-          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="relative z-50 bg-slate-50 border-t border-slate-200 py-6 mt-auto">
+        <div className="max-w-7xl mx-auto px-6 text-center text-slate-500 text-sm">
+          <p>© 2026 Montgomery Urban Digital Twin for City of Montgomery. All rights reserved.</p>
         </div>
       </footer>
     </div>

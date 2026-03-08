@@ -142,8 +142,7 @@ export default function Dashboard() {
         
         {/* Footer */}
         <footer className="bg-white border-t border-slate-200 py-3 px-6 text-center text-xs text-slate-500 z-20">
-          <p className="mb-1">© 2026 City of Montgomery, Alabama | Urban Digital Twin Platform</p>
-          <p>Powered by Montgomery Open Data Initiative</p>
+          <p>© 2026 Montgomery Urban Digital Twin for City of Montgomery. All rights reserved.</p>
         </footer>
       </div>
       
