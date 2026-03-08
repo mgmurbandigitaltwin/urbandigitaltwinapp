@@ -1,28 +1,217 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, MapPin, BarChart2, Briefcase, Target, TrendingUp } from 'lucide-react';
+import { Eye, EyeOff, MapPin, BarChart2, Briefcase, Target, TrendingUp, Loader2 } from 'lucide-react';
+import { supabase } from '../services/supabase';
 
 export default function Login() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [city, setCity] = useState('');
+  const [phone, setPhone] = useState('');
+  const [role, setRole] = useState<'admin' | 'business'>('business');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/dashboard');
+      }
+    };
+    checkSession();
+  }, [navigate]);
+
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
-    if (email === 'admin@montgomery-twin.local' && password === 'Admin123!') {
-      localStorage.setItem('userRole', 'admin');
-      navigate('/dashboard');
-    } else if (email === 'business@montgomery-twin.local' && password === 'Business123!') {
-      localStorage.setItem('userRole', 'business');
-      navigate('/dashboard');
-    } else {
-      setError('Invalid email or password. Please use the demo accounts.');
+    try {
+      // Check demo accounts first
+      if (email === 'admin@montgomery-twin.local' && password === 'Admin123!') {
+        localStorage.setItem('userRole', 'admin');
+        navigate('/dashboard');
+        return;
+      } else if (email === 'business@montgomery-twin.local' && password === 'Business123!') {
+        localStorage.setItem('userRole', 'business');
+        navigate('/dashboard');
+        return;
+      } else if (email === 'nileshnaphade15@gmail.com' && password === 'Admin123#') {
+        localStorage.setItem('userRole', 'super_admin');
+        navigate('/dashboard');
+        return;
+      }
+
+      // If not demo accounts, use Supabase
+      if (activeTab === 'signup') {
+        const phoneRegex = /^\+?[\d\s-]{10,}$/;
+        if (!phoneRegex.test(phone)) {
+          setError('Please enter a valid phone number (at least 10 digits).');
+          setIsLoading(false);
+          return;
+        }
+
+        const status = role === 'admin' ? 'pending' : 'active';
+        
+        let supabaseUserId = null;
+        let isSupabaseSuccess = false;
+
+        try {
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                role: role,
+                first_name: firstName,
+                last_name: lastName,
+                city: city,
+                phone: phone,
+                status: status
+              }
+            }
+          });
+          
+          if (error) {
+            if (error.message.toLowerCase().includes('already registered') || error.message.toLowerCase().includes('already exists')) {
+              setError('User already registered with this email address.');
+              setIsLoading(false);
+              return;
+            }
+            throw error;
+          }
+
+          if (data?.user) {
+            // If email confirmation is enabled, Supabase returns a fake user with empty identities if the email already exists
+            if (data.user.identities && data.user.identities.length === 0) {
+              setError('User already registered with this email address.');
+              setIsLoading(false);
+              return;
+            }
+            
+            supabaseUserId = data.user.id;
+            isSupabaseSuccess = true;
+          }
+        } catch (err: any) {
+          if (err.message && (err.message.toLowerCase().includes('already registered') || err.message.toLowerCase().includes('already exists'))) {
+            setError('User already registered with this email address.');
+            setIsLoading(false);
+            return;
+          }
+          console.warn("Supabase signup failed or not configured, using local demo mode.");
+        }
+
+        // Fallback to local storage for demo purposes
+        const localProfiles = JSON.parse(localStorage.getItem('demo_profiles') || '[]');
+        
+        if (!isSupabaseSuccess && localProfiles.some((p: any) => p.email === email)) {
+          setError('User already registered with this email address.');
+          setIsLoading(false);
+          return;
+        }
+
+        const newProfile = {
+          id: supabaseUserId || Date.now().toString(),
+          email,
+          password,
+          first_name: firstName,
+          last_name: lastName,
+          city,
+          phone,
+          role,
+          status
+        };
+
+        localProfiles.push(newProfile);
+        localStorage.setItem('demo_profiles', JSON.stringify(localProfiles));
+
+        if (isSupabaseSuccess) {
+          // Attempt to insert into profiles table
+          try {
+            await supabase.from('profiles').insert([newProfile]);
+          } catch (profileErr) {
+            console.warn("Could not insert profile, table might not exist yet.", profileErr);
+          }
+        }
+
+        if (status === 'pending') {
+          await supabase.auth.signOut();
+          setError('Account created successfully. Your admin account is pending approval by the super admin.');
+          setActiveTab('signin');
+          setIsLoading(false);
+          return;
+        }
+
+        localStorage.setItem('userRole', role);
+        navigate('/dashboard');
+      } else {
+        // Check local profiles first for demo
+        const localProfiles = JSON.parse(localStorage.getItem('demo_profiles') || '[]');
+        const localProfile = localProfiles.find((p: any) => p.email === email && p.password === password);
+
+        if (localProfile) {
+          if (localProfile.role === 'admin' && localProfile.status === 'pending') {
+            setError('Your admin account is pending approval by the super admin.');
+            setIsLoading(false);
+            return;
+          } else if (localProfile.role === 'admin' && localProfile.status === 'rejected') {
+            setError('Your admin account request was rejected.');
+            setIsLoading(false);
+            return;
+          }
+          localStorage.setItem('userRole', localProfile.role);
+          navigate('/dashboard');
+          return;
+        }
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
+        if (error) throw error;
+        
+        if (data.user) {
+          // Check profile for status
+          let userStatus = data.user.user_metadata?.status || 'active';
+          let userRole = data.user.user_metadata?.role || 'business';
+
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('status, role')
+              .eq('id', data.user.id)
+              .single();
+            
+            if (profile) {
+              userStatus = profile.status;
+              userRole = profile.role;
+            }
+          } catch (err) {
+            console.warn("Could not fetch profile, falling back to metadata");
+          }
+
+          if (userRole === 'admin' && userStatus === 'pending') {
+            await supabase.auth.signOut();
+            setError('Your admin account is pending approval by the super admin.');
+            return;
+          }
+
+          localStorage.setItem('userRole', userRole);
+          navigate('/dashboard');
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || 'Authentication failed. Please check your credentials.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -139,59 +328,141 @@ export default function Login() {
               {/* Form Tabs */}
               <div className="flex gap-4 mb-8 border-b-2 border-slate-100">
                 <button 
-                  onClick={() => setActiveTab('signin')}
+                  onClick={() => { setActiveTab('signin'); setError(''); }}
                   className={`flex-1 pb-4 font-semibold transition-all border-b-[3px] ${activeTab === 'signin' ? 'text-[#0055A4] border-[#0055A4]' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
                 >
                   Sign In
                 </button>
                 <button 
-                  onClick={() => setActiveTab('signup')}
+                  onClick={() => { setActiveTab('signup'); setError(''); }}
                   className={`flex-1 pb-4 font-semibold transition-all border-b-[3px] ${activeTab === 'signup' ? 'text-[#0055A4] border-[#0055A4]' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
                 >
                   Sign Up
                 </button>
               </div>
 
-              {activeTab === 'signin' ? (
-                <form onSubmit={handleLogin} className="space-y-6">
-                  {error && (
-                    <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium border border-red-100">
-                      {error}
+              <form onSubmit={handleAuth} className="space-y-5">
+                {error && (
+                  <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium border border-red-100">
+                    {error}
+                  </div>
+                )}
+
+                {activeTab === 'signup' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block font-semibold text-[#003366] mb-1.5 text-sm">First Name</label>
+                        <input 
+                          type="text" 
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          className="w-full p-3 border-2 border-slate-100 rounded-xl text-base transition-all focus:outline-none focus:border-[#0055A4] focus:ring-4 focus:ring-[#0055A4]/10"
+                          placeholder="John"
+                          required
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-[#003366] mb-1.5 text-sm">Last Name</label>
+                        <input 
+                          type="text" 
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          className="w-full p-3 border-2 border-slate-100 rounded-xl text-base transition-all focus:outline-none focus:border-[#0055A4] focus:ring-4 focus:ring-[#0055A4]/10"
+                          placeholder="Doe"
+                          required
+                          disabled={isLoading}
+                        />
+                      </div>
                     </div>
-                  )}
-                  <div>
-                    <label className="block font-semibold text-[#003366] mb-2 text-sm">Email Address</label>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block font-semibold text-[#003366] mb-1.5 text-sm">City</label>
+                        <input 
+                          type="text" 
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                          className="w-full p-3 border-2 border-slate-100 rounded-xl text-base transition-all focus:outline-none focus:border-[#0055A4] focus:ring-4 focus:ring-[#0055A4]/10"
+                          placeholder="Montgomery"
+                          required
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-[#003366] mb-1.5 text-sm">Phone Number</label>
+                        <input 
+                          type="tel" 
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className="w-full p-3 border-2 border-slate-100 rounded-xl text-base transition-all focus:outline-none focus:border-[#0055A4] focus:ring-4 focus:ring-[#0055A4]/10"
+                          placeholder="(555) 123-4567"
+                          required
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div>
+                  <label className="block font-semibold text-[#003366] mb-1.5 text-sm">Email Address</label>
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full p-3 border-2 border-slate-100 rounded-xl text-base transition-all focus:outline-none focus:border-[#0055A4] focus:ring-4 focus:ring-[#0055A4]/10"
+                    placeholder="Enter your email address"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block font-semibold text-[#003366] mb-1.5 text-sm">Password</label>
+                  <div className="relative">
                     <input 
-                      type="email" 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full p-4 border-2 border-slate-100 rounded-xl text-base transition-all focus:outline-none focus:border-[#0055A4] focus:ring-4 focus:ring-[#0055A4]/10"
-                      placeholder="Enter your email address"
+                      type={showPassword ? 'text' : 'password'} 
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full p-3 border-2 border-slate-100 rounded-xl text-base transition-all focus:outline-none focus:border-[#0055A4] focus:ring-4 focus:ring-[#0055A4]/10 pr-12"
+                      placeholder="Enter your password"
                       required
+                      disabled={isLoading}
                     />
+                    <button 
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#0055A4] transition-colors"
+                      disabled={isLoading}
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
                   </div>
-                  
+                </div>
+
+                {activeTab === 'signup' && (
                   <div>
-                    <label className="block font-semibold text-[#003366] mb-2 text-sm">Password</label>
+                    <label className="block font-semibold text-[#003366] mb-1.5 text-sm">Select Role</label>
                     <div className="relative">
-                      <input 
-                        type={showPassword ? 'text' : 'password'} 
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full p-4 border-2 border-slate-100 rounded-xl text-base transition-all focus:outline-none focus:border-[#0055A4] focus:ring-4 focus:ring-[#0055A4]/10 pr-12"
-                        placeholder="Enter your password"
-                        required
-                      />
-                      <button 
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#0055A4] transition-colors"
+                      <select 
+                        value={role}
+                        onChange={(e) => setRole(e.target.value as 'admin' | 'business')}
+                        className="w-full p-3 border-2 border-slate-100 rounded-xl text-base transition-all focus:outline-none focus:border-[#0055A4] focus:ring-4 focus:ring-[#0055A4]/10 appearance-none bg-white font-medium text-slate-700"
+                        disabled={isLoading}
                       >
-                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                      </button>
+                        <option value="business">Business User</option>
+                        <option value="admin">Administrator (Requires Approval)</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                      </div>
                     </div>
                   </div>
-                  
+                )}
+                
+                {activeTab === 'signin' && (
                   <div className="flex justify-between items-center text-sm">
                     <label className="flex items-center gap-2 cursor-pointer text-slate-500">
                       <input type="checkbox" className="rounded text-[#0055A4] focus:ring-[#0055A4] w-4 h-4" />
@@ -199,29 +470,38 @@ export default function Login() {
                     </label>
                     <a href="#" className="text-[#0055A4] font-medium hover:underline">Forgot password?</a>
                   </div>
-                  
-                  <button 
-                    type="submit" 
-                    className="w-full py-4 rounded-xl text-lg font-semibold text-white bg-gradient-to-br from-[#0055A4] to-[#4A90E2] hover:-translate-y-0.5 hover:shadow-[0_10px_25px_rgba(0,85,164,0.3)] transition-all flex items-center justify-center gap-2"
-                  >
-                    🔐 Sign In
-                  </button>
+                )}
+                
+                <button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="w-full py-4 rounded-xl text-lg font-semibold text-white bg-gradient-to-br from-[#0055A4] to-[#4A90E2] hover:-translate-y-0.5 hover:shadow-[0_10px_25px_rgba(0,85,164,0.3)] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    activeTab === 'signin' ? '🔐 Sign In' : '✨ Create Account'
+                  )}
+                </button>
 
-                  <div className="text-center pt-6 border-t border-slate-100 text-slate-500">
-                    Don't have an account? <button type="button" onClick={() => setActiveTab('signup')} className="text-[#0055A4] font-medium hover:underline">Sign up for free</button>
-                  </div>
-                </form>
-              ) : (
-                <div className="text-center py-8 text-slate-500">
-                  <p className="mb-4">Sign up functionality is disabled in this demo.</p>
-                  <button onClick={() => setActiveTab('signin')} className="text-[#0055A4] font-medium hover:underline">Return to Sign In</button>
+                <div className="text-center pt-6 border-t border-slate-100 text-slate-500">
+                  {activeTab === 'signin' ? (
+                    <>Don't have an account? <button type="button" onClick={() => { setActiveTab('signup'); setError(''); }} className="text-[#0055A4] font-medium hover:underline">Sign up for free</button></>
+                  ) : (
+                    <>Already have an account? <button type="button" onClick={() => { setActiveTab('signin'); setError(''); }} className="text-[#0055A4] font-medium hover:underline">Sign in</button></>
+                  )}
                 </div>
-              )}
+              </form>
 
               {/* Demo Accounts */}
               <div className="mt-8 bg-slate-50 p-6 rounded-xl border border-slate-100">
                 <h4 className="text-[#003366] font-semibold mb-4 text-center">Demo Accounts</h4>
                 <div className="flex flex-col gap-3">
+                  <div className="bg-white p-3 rounded-lg text-sm font-mono border border-slate-200 shadow-sm">
+                    <strong className="font-sans text-slate-700">Super Admin:</strong><br/>
+                    <span className="text-slate-600">nileshnaphade15@gmail.com</span><br/>
+                    <span className="text-slate-500">Admin123#</span>
+                  </div>
                   <div className="bg-white p-3 rounded-lg text-sm font-mono border border-slate-200 shadow-sm">
                     <strong className="font-sans text-slate-700">Admin:</strong><br/>
                     <span className="text-slate-600">admin@montgomery-twin.local</span><br/>

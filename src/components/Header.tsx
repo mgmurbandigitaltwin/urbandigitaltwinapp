@@ -2,7 +2,7 @@ import React from 'react';
 import { Bell, Search, Menu } from 'lucide-react';
 
 interface HeaderProps {
-  role: 'admin' | 'business';
+  role: 'admin' | 'business' | 'super_admin';
   lastUpdated: Date;
 }
 
@@ -10,9 +10,9 @@ export default function Header({ role, lastUpdated }: HeaderProps) {
   return (
     <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-10 shadow-sm">
       <div className="flex items-center flex-1">
-        <button className="md:hidden p-2 -ml-2 mr-2 text-slate-400 hover:text-slate-500">
+        <button className="md:hidden p-2 -ml-2 mr-2 bg-[#FFD700] text-[#0055A4] hover:bg-[#e6c200] rounded-full transition-colors">
           <span className="sr-only">Open sidebar</span>
-          <Menu className="h-6 w-6" aria-hidden="true" />
+          <Menu className="h-5 w-5" aria-hidden="true" />
         </button>
         <div className="flex-1 flex max-w-md">
           <div className="relative w-full text-slate-400 focus-within:text-slate-600">
@@ -34,10 +34,10 @@ export default function Header({ role, lastUpdated }: HeaderProps) {
           <span className="font-medium text-slate-700">Live Data Sync</span>
           <span>Last updated: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
-        <button className="bg-white p-1 rounded-full text-slate-400 hover:text-slate-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 relative">
+        <button className="p-2 bg-[#FFD700] text-[#0055A4] hover:bg-[#e6c200] rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0055A4] relative">
           <span className="sr-only">View notifications</span>
-          <Bell className="h-6 w-6" aria-hidden="true" />
-          <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-white" />
+          <Bell className="h-5 w-5" aria-hidden="true" />
+          <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
         </button>
       </div>
     </header>
