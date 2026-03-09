@@ -1,6 +1,6 @@
-# Montgomery City Command Center - Comprehensive Documentation
+# Montgomery City Urban Digital Twin - Comprehensive Documentation
 
-Welcome to the **Montgomery City Command Center**, an advanced, AI-powered geospatial intelligence and urban planning platform. This application empowers city administrators, planners, and business owners to make data-driven decisions using real-time data, AI simulations, and advanced web scraping.
+Welcome to the **Montgomery City Urban Digital Twin**, an advanced, AI-powered geospatial intelligence and urban planning platform. This application empowers city administrators, planners, and business owners to make data-driven decisions using real-time data, AI simulations, and advanced web scraping.
 
 ---
 
@@ -16,7 +16,7 @@ Welcome to the **Montgomery City Command Center**, an advanced, AI-powered geosp
 ---
 
 ## 1. System Overview
-The Montgomery City Command Center is a React-based web application that visualizes urban data (traffic, zoning, demographics) on an interactive map. It integrates with **Google Gemini** for AI-driven insights and **Bright Data** for real-time web scraping (events, business data).
+The Montgomery City Urban Digital Twin is a React-based web application that visualizes urban data (traffic, zoning, demographics) on an interactive map. It integrates with **Google Gemini** for AI-driven insights and **Bright Data** for real-time web scraping (events, business data).
 
 **Key Technologies:**
 - **Frontend:** React 18, TypeScript, Tailwind CSS, Framer Motion, Lucide Icons
@@ -90,7 +90,7 @@ To provide real-time, actionable insights, the platform integrates with **Bright
 ---
 
 ## 6. Scenario Simulations
-The command center allows users to run predictive simulations based on AI and scraped data.
+The Urban Digital Twin allows users to run predictive simulations based on AI and scraped data.
 
 1. **Road Closure:**
    - **Input:** Select a major road (e.g., Dexter Avenue).
